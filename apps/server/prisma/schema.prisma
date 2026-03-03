@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
+
+enum Role {
+  DONOR
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum UrgencyLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RequestStatus {
+  PENDING
+  SEARCHING
+  MATCHED
+  FULFILLED
+  CANCELLED
+  EXPIRED
+}
+
+enum DonationStatus {
+  NOTIFIED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+model User {
+  id              String       @id @default(uuid())
+  email           String       @unique
+  password        String
+  firstName       String       @map("first_name")
+  lastName        String       @map("last_name")
+  phone           String?
+  bloodGroup      BloodGroup   @map("blood_group")
+  role            Role         @default(DONOR)
+  avatar          String?
+  isAvailable     Boolean      @default(true) @map("is_available")
+  isVerified      Boolean      @default(false) @map("is_verified")
+  isActive        Boolean      @default(true) @map("is_active")
+  latitude        Float?
+  longitude       Float?
+  address         String?
+  city            String?
+  lastDonationAt  DateTime?    @map("last_donation_at")
+  totalDonations  Int          @default(0) @map("total_donations")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  requestsAsPatient BloodRequest[] @relation("PatientRequests")
+  requestsAsDoctor  BloodRequest[] @relation("DoctorRequests")
+  donations         Donation[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+model BloodRequest {
+  id             String        @id @default(uuid())
+  patientId      String        @map("patient_id")
+  doctorId       String?       @map("doctor_id")
+  bloodGroup     BloodGroup    @map("blood_group")
+  urgencyLevel   UrgencyLevel  @map("urgency_level")
+  unitsNeeded    Int           @map("units_needed")
+  unitsFulfilled Int           @default(0) @map("units_fulfilled")
+  hospital       String
+  description    String?
+  latitude       Float
+  longitude      Float
+  status         RequestStatus @default(PENDING)
+  searchRadius   Int           @default(25) @map("search_radius")
+  expiresAt      DateTime?     @map("expires_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  patient   User       @relation("PatientRequests", fields: [patientId], references: [id])
+  doctor    User?      @relation("DoctorRequests", fields: [doctorId], references: [id])
+  donations Donation[]
+
+  @@map("blood_requests")
+}
+
+model Donation {
+  id          String         @id @default(uuid())
+  requestId   String         @map("request_id")
+  donorId     String         @map("donor_id")
+  status      DonationStatus @default(NOTIFIED)
+  scheduledAt DateTime?      @map("scheduled_at")
+  completedAt DateTime?      @map("completed_at")
+  notes       String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  request BloodRequest @relation(fields: [requestId], references: [id])
+  donor   User         @relation(fields: [donorId], references: [id])
+
+  @@map("donations")
+}
+
+model Center {
+  id           String      @id @default(uuid())
+  name         String
+  address      String
+  city         String
+  phone        String?
+  email        String?
+  latitude     Float
+  longitude    Float
+  openingHours String?     @map("opening_hours")
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  bloodStocks BloodStock[]
+  campaigns   Campaign[]
+
+  @@map("centers")
+}
+
+model BloodStock {
+  id             String     @id @default(uuid())
+  centerId       String     @map("center_id")
+  bloodGroup     BloodGroup @map("blood_group")
+  unitsAvailable Int        @default(0) @map("units_available")
+  lastUpdated    DateTime   @default(now()) @map("last_updated")
+
+  center Center @relation(fields: [centerId], references: [id])
+
+  @@unique([centerId, bloodGroup])
+  @@map("blood_stocks")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String
+  body      String
+  type      String
+  data      Json?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Campaign {
+  id             String   @id @default(uuid())
+  centerId       String   @map("center_id")
+  title          String
+  description    String?
+  startDate      DateTime @map("start_date")
+  endDate        DateTime @map("end_date")
+  goalUnits      Int      @map("goal_units")
+  collectedUnits Int      @default(0) @map("collected_units")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  center Center @relation(fields: [centerId], references: [id])
+
+  @@map("campaigns")
+}

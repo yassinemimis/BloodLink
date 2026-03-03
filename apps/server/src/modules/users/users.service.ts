@@ -1,0 +1,152 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { BloodGroup, Role } from '@prisma/client';
+
+@Injectable()
+export class UsersService {
+  constructor(private prisma: PrismaService) {}
+
+  // ==================== LISTER LES DONNEURS ====================
+  async findAllDonors(filters?: {
+    bloodGroup?: BloodGroup;
+    city?: string;
+    isAvailable?: boolean;
+    page?: number;
+    limit?: number;
+  }) {
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = { role: Role.DONOR, isActive: true };
+    if (filters?.bloodGroup) where.bloodGroup = filters.bloodGroup;
+    if (filters?.city) where.city = { contains: filters.city, mode: 'insensitive' };
+    if (filters?.isAvailable !== undefined) where.isAvailable = filters.isAvailable;
+
+    const [donors, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          bloodGroup: true,
+          city: true,
+          isAvailable: true,
+          totalDonations: true,
+          lastDonationAt: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      data: donors,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  // ==================== DÉTAIL D'UN UTILISATEUR ====================
+  async findOne(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        bloodGroup: true,
+        role: true,
+        avatar: true,
+        isAvailable: true,
+        isVerified: true,
+        city: true,
+        address: true,
+        totalDonations: true,
+        lastDonationAt: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+
+    return user;
+  }
+
+  // ==================== METTRE À JOUR LA DISPONIBILITÉ ====================
+  async toggleAvailability(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isAvailable: !user.isAvailable },
+      select: {
+        id: true,
+        isAvailable: true,
+      },
+    });
+  }
+
+  // ==================== METTRE À JOUR LA LOCALISATION ====================
+  async updateLocation(
+    userId: string,
+    latitude: number,
+    longitude: number,
+    address?: string,
+    city?: string,
+  ) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { latitude, longitude, address, city },
+      select: {
+        id: true,
+        latitude: true,
+        longitude: true,
+        address: true,
+        city: true,
+      },
+    });
+  }
+
+  // ==================== STATISTIQUES GLOBALES ====================
+  async getGlobalStats() {
+    const [
+      totalDonors,
+      availableDonors,
+      totalPatients,
+      totalDonations,
+      donorsByBloodGroup,
+    ] = await Promise.all([
+      this.prisma.user.count({ where: { role: 'DONOR' } }),
+      this.prisma.user.count({ where: { role: 'DONOR', isAvailable: true } }),
+      this.prisma.user.count({ where: { role: 'PATIENT' } }),
+      this.prisma.donation.count({ where: { status: 'COMPLETED' } }),
+      this.prisma.user.groupBy({
+        by: ['bloodGroup'],
+        where: { role: 'DONOR' },
+        _count: { id: true },
+      }),
+    ]);
+
+    return {
+      totalDonors,
+      availableDonors,
+      totalPatients,
+      totalDonations,
+      donorsByBloodGroup,
+    };
+  }
+}
