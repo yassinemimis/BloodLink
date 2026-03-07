@@ -8,6 +8,7 @@ import { DonationsModule } from './modules/donations/donations.module';
 import { CentersModule } from './modules/centers/centers.module';
 import { MatchingModule } from './modules/matching/matching.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { CampaignsModule } from './modules/campaigns/campaigns.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     CentersModule,
     MatchingModule,
     NotificationsModule,
+    CampaignsModule, 
   ],
 })
 export class AppModule {}

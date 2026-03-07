@@ -11,9 +11,12 @@ import {
   URGENCY_LABELS,
   URGENCY_COLORS,
   STATUS_LABELS,
+  Role,
 } from '../types';
+import { useAuthStore } from '../store/useAuthStore';
 export default function BloodRequestsPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [requests, setRequests] = useState<BloodRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -63,13 +66,16 @@ export default function BloodRequestsPage() {
             Gérez et suivez toutes les demandes de transfusion
           </p>
         </div>
-        <button
-          onClick={() => navigate('/requests/new')}
-          className="btn-primary flex items-center gap-2"
-        >
-          <PlusCircle className="w-5 h-5" />
-          Nouvelle demande
-        </button>
+     {/* ✅ مخفي عن DONOR */}
+        {user?.role !== Role.DONOR && (
+          <button
+            onClick={() => navigate('/requests/new')}
+            className="btn-primary flex items-center gap-2"
+          >
+            <PlusCircle className="w-5 h-5" />
+            Nouvelle demande
+          </button>
+        )}
       </div>
 
       {/* Filters */}

@@ -33,16 +33,18 @@ export class NotificationsController {
     );
   }
 
-  @Patch(':id/read')
-  @ApiOperation({ summary: 'Marquer une notification comme lue' })
-  markAsRead(@Param('id') id: string, @Req() req: any) {
-    return this.notificationsService.markAsRead(id, req.user.sub);
-  }
-
+  // ✅ 'read-all' يجب أن يكون قبل ':id/read' لمنع التعارض
   @Patch('read-all')
   @ApiOperation({ summary: 'Marquer toutes les notifications comme lues' })
   markAllAsRead(@Req() req: any) {
     return this.notificationsService.markAllAsRead(req.user.sub);
+  }
+
+  // ✅ بعد 'read-all' حتى لا يلتقطه كـ :id
+  @Patch(':id/read')
+  @ApiOperation({ summary: 'Marquer une notification comme lue' })
+  markAsRead(@Param('id') id: string, @Req() req: any) {
+    return this.notificationsService.markAsRead(id, req.user.sub);
   }
 
   @Delete(':id')

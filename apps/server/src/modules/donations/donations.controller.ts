@@ -1,13 +1,6 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-  Req,
+  Controller, Get, Post, Patch,
+  Param, Body, Query, UseGuards, Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DonationsService } from './donations.service';
@@ -24,21 +17,22 @@ export class DonationsController {
   constructor(private readonly donationsService: DonationsService) {}
 
   @Post('accept')
-  @ApiOperation({ summary: 'Accepter une demande de don de sang' })
+  @ApiOperation({ summary: 'Accepter une demande de don (Donor)' })
   acceptRequest(@Req() req: any, @Body() dto: CreateDonationDto) {
     return this.donationsService.acceptRequest(req.user.sub, dto);
   }
 
+  // ✅ ADMIN + DOCTOR + PATIENT peuvent confirmer
   @Patch(':id/complete')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN', 'DOCTOR')
-  @ApiOperation({ summary: 'Marquer une donation comme complétée' })
+  @Roles('ADMIN', 'DOCTOR', 'PATIENT')
+  @ApiOperation({ summary: 'Confirmer que le don a été effectué' })
   completeDonation(@Param('id') id: string, @Req() req: any) {
-    return this.donationsService.completeDonation(id, req.user.sub);
+    return this.donationsService.completeDonation(id, req.user.sub, req.user.role);
   }
 
   @Patch(':id/reject')
-  @ApiOperation({ summary: 'Rejeter une donation' })
+  @ApiOperation({ summary: 'Rejeter / annuler une donation (Donor)' })
   rejectDonation(@Param('id') id: string, @Req() req: any) {
     return this.donationsService.rejectDonation(id, req.user.sub);
   }
@@ -56,7 +50,7 @@ export class DonationsController {
   @Get()
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'DOCTOR')
-  @ApiOperation({ summary: 'Lister toutes les donations (Admin)' })
+  @ApiOperation({ summary: 'Lister toutes les donations (Admin/Doctor)' })
   @ApiQuery({ name: 'status', enum: DonationStatus, required: false })
   findAll(
     @Query('status') status?: DonationStatus,

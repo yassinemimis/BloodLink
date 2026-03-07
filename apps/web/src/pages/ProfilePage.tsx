@@ -1,16 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Droplets,
-  Calendar,
-  Shield,
-  CheckCircle,
-  Edit3,
-  Save,
-  Loader2,
+  Mail, Phone, MapPin, Droplets,
+  Calendar, Shield, CheckCircle,
+  Edit3, Save, Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/useAuthStore';
@@ -20,13 +12,34 @@ import { BLOOD_GROUP_LABELS } from '../types';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
-  const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [fetching, setFetching] = useState(true); // ✅ جلب البيانات
+  const [editing, setEditing]   = useState(false);
   const [form, setForm] = useState({
-    phone: user?.phone || '',
+    phone:   user?.phone   || '',
     address: user?.address || '',
-    city: user?.city || '',
+    city:    user?.city    || '',
   });
+
+  // ✅ جلب البيانات الكاملة عند فتح الصفحة
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await authService.getProfile();
+        updateUser(profile); // تحديث الـ store بالبيانات الكاملة
+        setForm({
+          phone:   profile.phone   || '',
+          address: profile.address || '',
+          city:    profile.city    || '',
+        });
+      } catch (error) {
+        toast.error('Erreur lors du chargement du profil');
+      } finally {
+        setFetching(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleToggleAvailability = async () => {
     try {
@@ -45,13 +58,12 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Sauvegarder localisation si on a une ville
       if (form.city) {
         await api.patch('/users/location', {
-          latitude: user?.latitude || 0,
+          latitude:  user?.latitude  || 0,
           longitude: user?.longitude || 0,
-          address: form.address,
-          city: form.city,
+          address:   form.address,
+          city:      form.city,
         });
       }
       updateUser(form);
@@ -63,6 +75,14 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
+  if (fetching) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blood-600 border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!user) return null;
 
@@ -107,15 +127,16 @@ export default function ProfilePage() {
 
           <button
             onClick={() => editing ? handleSave() : setEditing(true)}
-            className={editing ? 'btn-primary flex items-center gap-2 text-sm' : 'btn-secondary flex items-center gap-2 text-sm'}
+            className={editing
+              ? 'btn-primary flex items-center gap-2 text-sm'
+              : 'btn-secondary flex items-center gap-2 text-sm'}
           >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : editing ? (
-              <><Save className="w-4 h-4" /> Sauvegarder</>
-            ) : (
-              <><Edit3 className="w-4 h-4" /> Modifier</>
-            )}
+            {loading
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : editing
+                ? <><Save className="w-4 h-4" /> Sauvegarder</>
+                : <><Edit3 className="w-4 h-4" /> Modifier</>
+            }
           </button>
         </div>
 
@@ -171,7 +192,9 @@ export default function ProfilePage() {
             <Shield className="w-5 h-5 text-gray-400" />
             <div>
               <p className="text-xs text-gray-500">Rôle</p>
-              <p className="text-sm font-medium text-gray-900 capitalize">{user.role.toLowerCase()}</p>
+              <p className="text-sm font-medium text-gray-900 capitalize">
+                {user.role.toLowerCase()}
+              </p>
             </div>
           </div>
         </div>
@@ -182,9 +205,10 @@ export default function ProfilePage() {
         <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiques de don</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
             <div className="text-center p-4 bg-blood-50 rounded-lg">
               <Droplets className="w-8 h-8 text-blood-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-blood-700">{user.totalDonations}</p>
+              <p className="text-2xl font-bold text-blood-700">{user.totalDonations ?? 0}</p>
               <p className="text-sm text-blood-600">Dons effectués</p>
             </div>
 
@@ -223,11 +247,9 @@ export default function ProfilePage() {
                 user.isAvailable ? 'bg-green-500' : 'bg-gray-300'
               }`}
             >
-              <span
-                className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-300 ${
-                  user.isAvailable ? 'translate-x-7' : 'translate-x-0.5'
-                }`}
-              />
+              <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-300 ${
+                user.isAvailable ? 'translate-x-7' : 'translate-x-0.5'
+              }`} />
             </button>
           </div>
         </div>

@@ -16,6 +16,9 @@ import { Logger } from '@nestjs/common';
     credentials: true,
   },
   namespace: '/ws',
+  // ✅ pingInterval على السيرفر فقط — هنا مكانه الصحيح
+  pingInterval: 25000,
+  pingTimeout: 10000,
 })
 export class NotificationsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -24,61 +27,66 @@ export class NotificationsGateway
   server: Server;
 
   private logger = new Logger('NotificationsGateway');
-  private connectedUsers = new Map<string, string>(); // userId -> socketId
+  private userToSocket = new Map<string, string>();
+  private socketToUser = new Map<string, string>();
 
-  // ==================== CONNEXION ====================
   handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
   }
 
-  // ==================== DÉCONNEXION ====================
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
-    // Supprimer l'utilisateur de la map
-    for (const [userId, socketId] of this.connectedUsers.entries()) {
-      if (socketId === client.id) {
-        this.connectedUsers.delete(userId);
-        break;
-      }
+    const userId = this.socketToUser.get(client.id);
+    if (userId) {
+      this.userToSocket.delete(userId);
+      this.socketToUser.delete(client.id);
     }
   }
 
-  // ==================== ENREGISTREMENT UTILISATEUR ====================
   @SubscribeMessage('register')
   handleRegister(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { userId: string },
   ) {
-    this.connectedUsers.set(data.userId, client.id);
-    this.logger.log(`User ${data.userId} registered with socket ${client.id}`);
+    const userId = data.userId;
+    const oldSocketId = this.userToSocket.get(userId);
+    if (oldSocketId && oldSocketId !== client.id) {
+      this.socketToUser.delete(oldSocketId);
+    }
+    this.userToSocket.set(userId, client.id);
+    this.socketToUser.set(client.id, userId);
+    this.logger.log(`User ${userId} registered → socket ${client.id}`);
     return { event: 'registered', data: { success: true } };
   }
 
-  // ==================== ENVOYER NOTIFICATION À UN UTILISATEUR ====================
+  // ✅ معالجة الـ ping اليدوي من الـ Client
+  @SubscribeMessage('ping')
+  handlePing(@ConnectedSocket() client: Socket) {
+    client.emit('pong');
+  }
+
   sendNotificationToUser(userId: string, notification: any) {
-    const socketId = this.connectedUsers.get(userId);
+    const socketId = this.userToSocket.get(userId);
     if (socketId) {
       this.server.to(socketId).emit('notification', notification);
       this.logger.log(`Notification sent to user ${userId}`);
     }
   }
 
-  // ==================== ENVOYER ALERTE URGENTE ====================
   sendUrgentAlert(donorIds: string[], alert: any) {
+    let delivered = 0;
     donorIds.forEach((donorId) => {
-      const socketId = this.connectedUsers.get(donorId);
+      const socketId = this.userToSocket.get(donorId);
       if (socketId) {
         this.server.to(socketId).emit('urgent-alert', alert);
+        delivered++;
       }
     });
-    this.logger.log(
-      `Urgent alert sent to ${donorIds.length} donors`,
-    );
+    this.logger.log(`Urgent alert: ${delivered}/${donorIds.length} delivered`);
   }
 
-  // ==================== MISE À JOUR DU STATUT ====================
   sendStatusUpdate(userId: string, requestId: string, status: string) {
-    const socketId = this.connectedUsers.get(userId);
+    const socketId = this.userToSocket.get(userId);
     if (socketId) {
       this.server.to(socketId).emit('status-update', { requestId, status });
     }

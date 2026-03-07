@@ -1,20 +1,8 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-  Req,
+  Controller, Get, Post, Patch,
+  Param, Body, Query, UseGuards, Req,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { BloodRequestsService } from './blood-requests.service';
 import { CreateBloodRequestDto } from './dto/create-blood-request.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -35,30 +23,34 @@ export class BloodRequestsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lister toutes les demandes de sang' })
-  @ApiQuery({ name: 'status', enum: RequestStatus, required: false })
-  @ApiQuery({ name: 'urgencyLevel', enum: UrgencyLevel, required: false })
-  @ApiQuery({ name: 'page', type: Number, required: false })
+  @ApiOperation({ summary: 'Lister les demandes (filtrées selon le rôle)' })
+  @ApiQuery({ name: 'status',       enum: RequestStatus, required: false })
+  @ApiQuery({ name: 'urgencyLevel', enum: UrgencyLevel,  required: false })
+  @ApiQuery({ name: 'page',  type: Number, required: false })
   @ApiQuery({ name: 'limit', type: Number, required: false })
   findAll(
-    @Query('status') status?: RequestStatus,
+    @Req() req: any,
+    @Query('status')       status?: RequestStatus,
     @Query('urgencyLevel') urgencyLevel?: UrgencyLevel,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page')         page?: number,
+    @Query('limit')        limit?: number,
   ) {
-    return this.service.findAll({ status, urgencyLevel, page, limit });
+    // ✅ تمرير userId و role → الـ service يُفلتر حسب الدور
+    return this.service.findAll({
+      status, urgencyLevel, page, limit,
+      userId: req.user.sub,
+      role:   req.user.role,
+    });
   }
 
   @Get('statistics')
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN', 'DOCTOR')
-  @ApiOperation({ summary: 'Obtenir les statistiques des demandes' })
-  getStatistics() {
-    return this.service.getStatistics();
+  @ApiOperation({ summary: 'Statistiques des demandes (selon le rôle)' })
+  getStatistics(@Req() req: any) {
+    return this.service.getStatisticsByRole(req.user.sub, req.user.role);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Détails d\'une demande de sang' })
+  @ApiOperation({ summary: "Détails d'une demande de sang" })
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
   }

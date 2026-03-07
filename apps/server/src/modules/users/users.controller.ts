@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BloodGroup } from '@prisma/client';
+import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -72,5 +73,33 @@ export class UsersController {
       body.address,
       body.city,
     );
+  }
+
+
+    @Get()
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Lister tous les utilisateurs (Admin)' })
+  @ApiQuery({ name: 'role',       required: false })
+  @ApiQuery({ name: 'isVerified', type: Boolean, required: false })
+  @ApiQuery({ name: 'search',     required: false })
+  @ApiQuery({ name: 'page',       type: Number, required: false })
+  @ApiQuery({ name: 'limit',      type: Number, required: false })
+  findAllUsers(
+    @Query('role')       role?: string,
+    @Query('isVerified') isVerified?: boolean,
+    @Query('search')     search?: string,
+    @Query('page')       page?: number,
+    @Query('limit')      limit?: number,
+  ) {
+    return this.usersService.findAllUsers({ role, isVerified, search, page, limit });
+  }
+
+  @Patch(':id/verify')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Vérifier / dévérifier un utilisateur (Admin)' })
+  toggleVerification(@Param('id') id: string) {
+    return this.usersService.toggleVerification(id);
   }
 }

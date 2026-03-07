@@ -149,4 +149,60 @@ export class UsersService {
       donorsByBloodGroup,
     };
   }
+    // ==================== LISTER TOUS LES UTILISATEURS (Admin) ====================
+  async findAllUsers(filters?: {
+    role?: string;
+    isVerified?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const page  = filters?.page  || 1;
+    const limit = filters?.limit || 20;
+    const skip  = (page - 1) * limit;
+
+    const where: any = {};
+    if (filters?.role)                       where.role       = filters.role;
+    if (filters?.isVerified !== undefined)   where.isVerified = filters.isVerified;
+    if (filters?.search) {
+      where.OR = [
+        { firstName: { contains: filters.search, mode: 'insensitive' } },
+        { lastName:  { contains: filters.search, mode: 'insensitive' } },
+        { email:     { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true, email: true, firstName: true, lastName: true,
+          phone: true, bloodGroup: true, role: true,
+          isVerified: true, isAvailable: true, isActive: true,
+          city: true, totalDonations: true, createdAt: true,
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      data: users,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  // ==================== VÉRIFIER / DÉVÉRIFIER UN UTILISATEUR (Admin) ====================
+  async toggleVerification(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isVerified: !user.isVerified },
+      select: { id: true, isVerified: true },
+    });
+  }
 }
