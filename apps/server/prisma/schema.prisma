@@ -76,7 +76,7 @@ model User {
   requestsAsDoctor  BloodRequest[] @relation("DoctorRequests")
   donations         Donation[]
   notifications     Notification[]
-
+  sentMessages      Message[]      @relation("SentMessages")
   @@map("users")
 }
 
@@ -118,6 +118,7 @@ model Donation {
 
   request BloodRequest @relation(fields: [requestId], references: [id])
   donor   User         @relation(fields: [donorId], references: [id])
+  messages Message[]
 
   @@map("donations")
 }
@@ -186,4 +187,18 @@ model Campaign {
   center Center @relation(fields: [centerId], references: [id])
 
   @@map("campaigns")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  donationId String   @map("donation_id")
+  senderId   String   @map("sender_id")
+  content    String
+  isRead     Boolean  @default(false) @map("is_read")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  donation Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  sender   User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@map("messages")
 }

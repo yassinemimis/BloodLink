@@ -15,6 +15,28 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  // ==================== GEOCODING ====================
+  private async geocodeCity(
+    city: string,
+  ): Promise<{ lat: number; lng: number } | null> {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city + ', Algeria')}&format=json&limit=1`;
+      const res  = await fetch(url, {
+        headers: { 'User-Agent': 'BloodLink/1.0' },
+      });
+      const data = await res.json();
+      if (data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+        };
+      }
+    } catch {
+      // ignore — geocoding is optional
+    }
+    return null;
+  }
+
   // ==================== INSCRIPTION ====================
   async register(dto: RegisterDto) {
     // Vérifier si l'email existe déjà
@@ -29,16 +51,33 @@ export class AuthService {
     // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(dto.password, 12);
 
+    // ✅ Résoudre les coordonnées
+    let latitude  = dto.latitude  ?? null;
+    let longitude = dto.longitude ?? null;
+
+    // ✅ Si city fournie mais pas de coordonnées → geocode automatique
+    if (dto.city && !latitude && !longitude) {
+      const geo = await this.geocodeCity(dto.city);
+      if (geo) {
+        latitude  = geo.lat;
+        longitude = geo.lng;
+      }
+    }
+
     // Créer l'utilisateur
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
-        password: hashedPassword,
+        email:     dto.email,
+        password:  hashedPassword,
         firstName: dto.firstName,
-        lastName: dto.lastName,
-        phone: dto.phone,
-        bloodGroup: dto.bloodGroup,
-        role: dto.role || 'DONOR',
+        lastName:  dto.lastName,
+        phone:     dto.phone     ?? null,
+        bloodGroup:dto.bloodGroup,
+        role:      dto.role      || 'DONOR',
+        city:      dto.city      ?? null,
+        address:   dto.address   ?? null,
+        latitude,
+        longitude,
       },
       select: {
         id: true,
@@ -47,6 +86,9 @@ export class AuthService {
         lastName: true,
         bloodGroup: true,
         role: true,
+        city: true,
+        latitude: true,
+        longitude: true,
         createdAt: true,
       },
     });
@@ -63,7 +105,6 @@ export class AuthService {
 
   // ==================== CONNEXION ====================
   async login(dto: LoginDto) {
-    // Trouver l'utilisateur
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -72,30 +113,31 @@ export class AuthService {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
 
-    // Vérifier le mot de passe
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
 
-    // Vérifier si le compte est actif
     if (!user.isActive) {
       throw new UnauthorizedException('Ce compte a été désactivé');
     }
 
-    // Générer le token
     const token = this.generateToken(user.id, user.email, user.role);
 
     return {
       message: 'Connexion réussie',
       user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        bloodGroup: user.bloodGroup,
-        role: user.role,
+        id:          user.id,
+        email:       user.email,
+        firstName:   user.firstName,
+        lastName:    user.lastName,
+        bloodGroup:  user.bloodGroup,
+        role:        user.role,
         isAvailable: user.isAvailable,
+        latitude:    user.latitude,
+        longitude:   user.longitude,
+        city:        user.city,
+        avatar:      user.avatar,
       },
       accessToken: token,
     };
@@ -134,15 +176,7 @@ export class AuthService {
   }
 
   // ==================== HELPER ====================
-  private generateToken(
-    userId: string,
-    email: string,
-    role: string,
-  ): string {
-    return this.jwtService.sign({
-      sub: userId,
-      email,
-      role,
-    });
+  private generateToken(userId: string, email: string, role: string): string {
+    return this.jwtService.sign({ sub: userId, email, role });
   }
 }

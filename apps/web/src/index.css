@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 
+/* ── Blood color palette ── */
 @theme {
   --color-blood-50:  #fef2f2;
   --color-blood-100: #fee2e2;
@@ -14,6 +15,84 @@
   --color-blood-950: #450a0a;
 }
 
+@variant dark (&:where(.dark, .dark *));
+
+/* ══════════════════════════════════════════════
+   CSS Variables — Light / Dark
+══════════════════════════════════════════════ */
+@layer base {
+  :root {
+    --bg-page:       #f9fafb;
+    --bg-surface:    #ffffff;
+    --bg-subtle:     #f3f4f6;
+    --bg-muted:      #e5e7eb;
+    --border-color:  #e5e7eb;
+    --text-primary:  #111827;
+    --text-secondary:#6b7280;
+    --text-muted:    #9ca3af;
+  }
+
+  .dark {
+    --bg-page:       #030712;
+    --bg-surface:    #111827;
+    --bg-subtle:     #1f2937;
+    --bg-muted:      #374151;
+    --border-color:  #374151;
+    --text-primary:  #f9fafb;
+    --text-secondary:#9ca3af;
+    --text-muted:    #6b7280;
+  }
+
+  /* ✅ تطبيق على كل الصفحة تلقائياً */
+  html {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+  }
+
+  /* ✅ كل bg-white تصبح dark في dark mode */
+  .dark .bg-white   { background-color: var(--bg-surface) !important; }
+  .dark .bg-gray-50 { background-color: var(--bg-subtle)  !important; }
+  .dark .bg-gray-100{ background-color: var(--bg-muted)   !important; }
+
+  /* ✅ كل النصوص */
+  .dark .text-gray-900 { color: var(--text-primary)   !important; }
+  .dark .text-gray-800 { color: var(--text-primary)   !important; }
+  .dark .text-gray-700 { color: #d1d5db               !important; }
+  .dark .text-gray-600 { color: var(--text-secondary) !important; }
+  .dark .text-gray-500 { color: var(--text-muted)     !important; }
+  .dark .text-gray-400 { color: #6b7280               !important; }
+
+  /* ✅ Borders */
+  .dark .border-gray-100 { border-color: #1f2937 !important; }
+  .dark .border-gray-200 { border-color: #374151 !important; }
+  .dark .border-gray-300 { border-color: #4b5563 !important; }
+
+  /* ✅ Dividers & separators */
+  .dark .divide-gray-100 > * + * { border-color: #1f2937 !important; }
+  .dark .divide-gray-200 > * + * { border-color: #374151 !important; }
+
+  /* ✅ Modals / overlays */
+  .dark .bg-black\/60 { background-color: rgba(0,0,0,0.75) !important; }
+
+  /* ✅ Tables */
+  .dark thead,
+  .dark .bg-gray-50.thead { background-color: #1f2937 !important; }
+  .dark tr:hover          { background-color: #1f2937 !important; }
+
+  /* ✅ Scrollbar */
+  .dark ::-webkit-scrollbar       { background: #111827; }
+  .dark ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+}
+
+/* ══════════════════════════════════════════════
+   Components
+══════════════════════════════════════════════ */
 @layer components {
   /* ===== BUTTONS ===== */
   .btn-primary {
@@ -27,7 +106,9 @@
     @apply bg-white text-gray-700 px-4 py-2 rounded-lg font-medium border border-gray-200
            hover:bg-gray-50 active:bg-gray-100
            transition-colors duration-200 cursor-pointer
-           disabled:opacity-50 disabled:cursor-not-allowed;
+           disabled:opacity-50 disabled:cursor-not-allowed
+           dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700
+           dark:hover:bg-gray-700;
   }
 
   .btn-danger {
@@ -39,11 +120,13 @@
 
   /* ===== CARD ===== */
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6
+           dark:bg-gray-900 dark:border-gray-800;
   }
 
   .stat-card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-5;
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-5
+           dark:bg-gray-900 dark:border-gray-800;
   }
 
   /* ===== INPUT ===== */
@@ -51,7 +134,9 @@
     @apply w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900
            bg-white outline-none placeholder:text-gray-400
            focus:border-blood-500 focus:ring-2 focus:ring-blood-100
-           transition-colors duration-200;
+           transition-colors duration-200
+           dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100
+           dark:placeholder:text-gray-500 dark:focus:ring-blood-900;
   }
 
   /* ===== BADGE ===== */

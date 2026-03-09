@@ -9,6 +9,7 @@ import { CentersModule } from './modules/centers/centers.module';
 import { MatchingModule } from './modules/matching/matching.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { CampaignsModule } from './modules/campaigns/campaigns.module';
     CentersModule,
     MatchingModule,
     NotificationsModule,
-    CampaignsModule, 
+    CampaignsModule,
+    ChatModule, 
   ],
 })
 export class AppModule {}

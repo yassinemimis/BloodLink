@@ -7,7 +7,7 @@ import { Heart, Mail, Lock, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/useAuthStore';
-
+import logo from '../assets/blooslink-logo2.png';
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
@@ -49,15 +49,15 @@ export default function LoginPage() {
       {/* Left Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-blood-600 rounded-xl flex items-center justify-center">
-              <Heart className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-blood-600">BloodLink</h1>
-              <p className="text-sm text-gray-500">Sauver des vies, ensemble</p>
-            </div>
+          <div className="flex flex-col items-center mb-8">
+            <img
+              src={logo}
+              alt="BloodLink"
+              className="h-16 w-auto object-contain mb-3"
+            />
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Connectez-vous pour continuer
+            </p>
           </div>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-2">

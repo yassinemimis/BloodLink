@@ -21,7 +21,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import VerificationPage from './pages/VerificationPage';
 import CampaignsPage from './pages/CampaignsPage';
-
+import ChatPage from './pages/ChatPage';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 5 * 60 * 1000, retry: 1 },
@@ -94,8 +94,14 @@ function App() {
                 </RoleRoute>
               }
             />
+
+            <Route path="chat" element={<ChatPage />} />
+            <Route path="chat/:donationId" element={<ChatPage />} />
+            
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="profile" element={<ProfilePage />} />
+
+           
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

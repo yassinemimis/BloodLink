@@ -179,183 +179,142 @@ findOne(id: string) {
     });
   }
 
-  // ==================== STATISTIQUES ====================
+  // ==================== STATISTIQUES ADMIN (enrichies) ====================
   async getStatistics() {
+    const now   = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Génère les 6 derniers mois
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return { year: d.getFullYear(), month: d.getMonth() + 1, label: d.toLocaleString('fr-FR', { month: 'short' }) };
+    });
+
     const [
-      totalRequests,
-      pendingRequests,
-      fulfilledRequests,
-      criticalRequests,
-      requestsByBloodGroup,
+      totalRequests, pendingRequests, fulfilledRequests, criticalRequests,
+      totalDonors, availableDonors, totalPatients, totalDonations,
+      requestsByBloodGroup, requestsByUrgency, requestsByStatus,
+      todayRequests, allRequests,
     ] = await Promise.all([
       this.prisma.bloodRequest.count(),
-      this.prisma.bloodRequest.count({
-        where: { status: 'PENDING' },
-      }),
-      this.prisma.bloodRequest.count({
-        where: { status: 'FULFILLED' },
-      }),
-      this.prisma.bloodRequest.count({
-        where: {
-          urgencyLevel: 'CRITICAL',
-          status: { in: ['PENDING', 'SEARCHING'] },
-        },
-      }),
-      this.prisma.bloodRequest.groupBy({
-        by: ['bloodGroup'],
-        _count: { id: true },
+      this.prisma.bloodRequest.count({ where: { status: 'PENDING' } }),
+      this.prisma.bloodRequest.count({ where: { status: 'FULFILLED' } }),
+      this.prisma.bloodRequest.count({ where: { urgencyLevel: 'CRITICAL', status: { in: ['PENDING', 'SEARCHING'] } } }),
+      this.prisma.user.count({ where: { role: 'DONOR' } }),
+      this.prisma.user.count({ where: { role: 'DONOR', isAvailable: true } }),
+      this.prisma.user.count({ where: { role: 'PATIENT' } }),
+      this.prisma.donation.count({ where: { status: 'COMPLETED' } }),
+      this.prisma.bloodRequest.groupBy({ by: ['bloodGroup'], _count: { id: true } }),
+      this.prisma.bloodRequest.groupBy({ by: ['urgencyLevel'], _count: { id: true } }),
+      this.prisma.bloodRequest.groupBy({ by: ['status'],      _count: { id: true } }),
+      this.prisma.bloodRequest.count({ where: { createdAt: { gte: today } } }),
+      // جلب كل الطلبات للـ trend (آخر 6 أشهر)
+      this.prisma.bloodRequest.findMany({
+        where: { createdAt: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } },
+        select: { createdAt: true, status: true },
       }),
     ]);
 
+    // ✅ Trend mensuel
+    const monthlyTrend = last6Months.map(({ year, month, label }) => {
+      const requests  = allRequests.filter((r) => {
+        const d = new Date(r.createdAt);
+        return d.getFullYear() === year && d.getMonth() + 1 === month;
+      });
+      return {
+        month: label,
+        total:     requests.length,
+        fulfilled: requests.filter((r) => r.status === 'FULFILLED').length,
+      };
+    });
+
+    // ✅ Top villes donateurs
+    const donorCities = await this.prisma.user.groupBy({
+      by: ['city'],
+      where: { role: 'DONOR', city: { not: null } },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 5,
+    });
+
     return {
-      totalRequests,
-      pendingRequests,
-      fulfilledRequests,
-      criticalRequests,
-      fulfillmentRate: totalRequests > 0
-        ? ((fulfilledRequests / totalRequests) * 100).toFixed(1)
-        : 0,
+      // KPIs principaux
+      totalRequests, pendingRequests, fulfilledRequests, criticalRequests,
+      totalDonors, availableDonors, totalPatients, totalDonations,
+      todayRequests,
+      fulfillmentRate: totalRequests > 0 ? +((fulfilledRequests / totalRequests) * 100).toFixed(1) : 0,
+      donorAvailabilityRate: totalDonors > 0 ? +((availableDonors / totalDonors) * 100).toFixed(1) : 0,
+      // Charts
       requestsByBloodGroup,
+      requestsByUrgency,
+      requestsByStatus,
+      monthlyTrend,
+      topCities: donorCities.map((c) => ({ city: c.city!, count: c._count.id })),
     };
   }
 
-  // ==================== HELPER ====================
-  private calculateExpiration(urgencyLevel: UrgencyLevel): Date {
-    const now = new Date();
-    switch (urgencyLevel) {
-      case 'CRITICAL':
-        return new Date(now.getTime() + 1 * 60 * 60 * 1000);   // 1h
-      case 'HIGH':
-        return new Date(now.getTime() + 6 * 60 * 60 * 1000);   // 6h
-      case 'MEDIUM':
-        return new Date(now.getTime() + 24 * 60 * 60 * 1000);  // 24h
-      case 'LOW':
-        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 jours
-      default:
-        return new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    }
-  }
-
-
-    // ==================== STATISTIQUES PAR RÔLE ====================
+  // ==================== STATISTIQUES PAR RÔLE ====================
   async getStatisticsByRole(userId: string, role: string) {
-    // ADMIN & DOCTOR: statistiques globales
-    if (role === 'ADMIN' || role === 'DOCTOR') {
-      return this.getStatistics();
-    }
+    if (role === 'ADMIN' || role === 'DOCTOR') return this.getStatistics();
 
-    // PATIENT: ses propres demandes
     if (role === 'PATIENT') {
-      const [
-        myTotal,
-        myPending,
-        myMatched,
-        myFulfilled,
-        myCancelled,
-        myRequests,
-      ] = await Promise.all([
+      const [myTotal, myPending, myMatched, myFulfilled, myCancelled, myRequests] = await Promise.all([
         this.prisma.bloodRequest.count({ where: { patientId: userId } }),
         this.prisma.bloodRequest.count({ where: { patientId: userId, status: 'PENDING' } }),
         this.prisma.bloodRequest.count({ where: { patientId: userId, status: 'MATCHED' } }),
         this.prisma.bloodRequest.count({ where: { patientId: userId, status: 'FULFILLED' } }),
         this.prisma.bloodRequest.count({ where: { patientId: userId, status: 'CANCELLED' } }),
         this.prisma.bloodRequest.findMany({
-          where: { patientId: userId },
-          take: 5,
-          orderBy: { createdAt: 'desc' },
+          where: { patientId: userId }, take: 5, orderBy: { createdAt: 'desc' },
           include: {
             donations: {
               where: { status: { in: ['ACCEPTED', 'COMPLETED'] } },
-              include: {
-                donor: {
-                  select: { id: true, firstName: true, lastName: true, bloodGroup: true, phone: true },
-                },
-              },
+              include: { donor: { select: { id: true, firstName: true, lastName: true, bloodGroup: true, phone: true } } },
             },
           },
         }),
       ]);
-
-      return {
-        role: 'PATIENT',
-        myTotal,
-        myPending,
-        myMatched,
-        myFulfilled,
-        myCancelled,
-        myRequests,
-      };
+      return { role: 'PATIENT', myTotal, myPending, myMatched, myFulfilled, myCancelled, myRequests };
     }
 
-    // DONOR: historique de ses donations
     if (role === 'DONOR') {
       const donor = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          totalDonations: true,
-          lastDonationAt: true,
-          isAvailable: true,
-          bloodGroup: true,
-        },
+        select: { totalDonations: true, lastDonationAt: true, isAvailable: true, bloodGroup: true },
       });
-
-      const [
-        totalAccepted,
-        totalCompleted,
-        recentDonations,
-        activeRequests,
-      ] = await Promise.all([
+      const [totalAccepted, totalCompleted, recentDonations, activeRequests] = await Promise.all([
         this.prisma.donation.count({ where: { donorId: userId, status: 'ACCEPTED' } }),
         this.prisma.donation.count({ where: { donorId: userId, status: 'COMPLETED' } }),
         this.prisma.donation.findMany({
-          where: { donorId: userId },
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            request: {
-              select: {
-                id: true, bloodGroup: true, hospital: true,
-                urgencyLevel: true, status: true,
-              },
-            },
-          },
+          where: { donorId: userId }, take: 5, orderBy: { createdAt: 'desc' },
+          include: { request: { select: { id: true, bloodGroup: true, hospital: true, urgencyLevel: true, status: true } } },
         }),
         this.prisma.bloodRequest.findMany({
-          where: {
-            status: { in: ['PENDING', 'SEARCHING', 'MATCHED'] },
-          },
-          take: 5,
-          orderBy: [{ urgencyLevel: 'asc' }, { createdAt: 'desc' }],
-          include: {
-            patient: {
-              select: { firstName: true, lastName: true },
-            },
-          },
+          where: { status: { in: ['PENDING', 'SEARCHING', 'MATCHED'] } },
+          take: 5, orderBy: [{ urgencyLevel: 'asc' }, { createdAt: 'desc' }],
+          include: { patient: { select: { firstName: true, lastName: true } } },
         }),
       ]);
-
-      // حساب الأيام حتى التبرع التالي
       let daysUntilNextDonation = 0;
       if (donor?.lastDonationAt) {
-        const daysSince = Math.floor(
-          (Date.now() - new Date(donor.lastDonationAt).getTime()) / (1000 * 60 * 60 * 24),
-        );
+        const daysSince = Math.floor((Date.now() - new Date(donor.lastDonationAt).getTime()) / 86400000);
         daysUntilNextDonation = Math.max(0, 56 - daysSince);
       }
-
       return {
-        role: 'DONOR',
-        totalDonations: donor?.totalDonations || 0,
-        totalAccepted,
-        totalCompleted,
-        isAvailable: donor?.isAvailable,
-        daysUntilNextDonation,
-        lastDonationAt: donor?.lastDonationAt,
-        recentDonations,
-        activeRequests,
+        role: 'DONOR', totalDonations: donor?.totalDonations || 0,
+        totalAccepted, totalCompleted, isAvailable: donor?.isAvailable,
+        daysUntilNextDonation, lastDonationAt: donor?.lastDonationAt,
+        recentDonations, activeRequests,
       };
     }
 
     return this.getStatistics();
+  }
+
+  // ==================== HELPER ====================
+  private calculateExpiration(urgencyLevel: UrgencyLevel): Date {
+    const now = new Date();
+    const map = { CRITICAL: 1, HIGH: 6, MEDIUM: 24, LOW: 168 };
+    return new Date(now.getTime() + (map[urgencyLevel] || 24) * 3600000);
   }
 }

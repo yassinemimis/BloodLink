@@ -38,6 +38,8 @@ export class UsersService {
           totalDonations: true,
           lastDonationAt: true,
           createdAt: true,
+          latitude:  true,   // ✅ أضف هذا
+          longitude: true,   // ✅ 
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -205,4 +207,31 @@ export class UsersService {
       select: { id: true, isVerified: true },
     });
   }
+
+  // أضف هذه الدالة بعد updateLocation
+
+// ==================== METTRE À JOUR LE PROFIL ====================
+async updateProfile(userId: string, data: {
+  phone?:   string;
+  address?: string;
+  city?:    string;
+  avatar?:  string;
+}) {
+  return this.prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(data.phone   !== undefined && { phone:   data.phone }),
+      ...(data.address !== undefined && { address: data.address }),
+      ...(data.city    !== undefined && { city:    data.city }),
+      ...(data.avatar  !== undefined && { avatar:  data.avatar }),
+    },
+    select: {
+      id: true, email: true, firstName: true, lastName: true,
+      phone: true, bloodGroup: true, role: true, avatar: true,
+      isAvailable: true, isVerified: true, latitude: true,
+      longitude: true, address: true, city: true,
+      lastDonationAt: true, totalDonations: true, createdAt: true,
+    },
+  });
+}
 }
