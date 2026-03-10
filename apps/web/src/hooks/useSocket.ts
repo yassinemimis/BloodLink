@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { io, Socket }                  from 'socket.io-client';
-import { useAuthStore }                from '../store/useAuthStore';
+import { io, Socket } from 'socket.io-client';
+import { useAuthStore } from '../store/useAuthStore';
 
 export function useSocket() {
   const { user, isAuthenticated } = useAuthStore();
@@ -10,7 +10,9 @@ export function useSocket() {
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
-    const socket = io('http://localhost:3000/ws', {
+    const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
+
+    const socket = io(`${WS_URL}/ws`, {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
