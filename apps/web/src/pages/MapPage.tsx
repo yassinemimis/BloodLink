@@ -1,17 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MapContainer, TileLayer, Marker, Popup,
   Circle, useMap, useMapEvents,
 } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  MapPin, Building2, Users, Droplets,
-  Filter, Locate, Layers, ChevronDown,
+  MapPin, Building2, Users,
+  Filter, Locate, 
   Phone, Clock, X, Navigation,
 } from 'lucide-react';
 import api from '../services/api';
 import { BLOOD_GROUP_LABELS } from '../types';
-import { useAuthStore } from '../store/useAuthStore';
+
 import 'leaflet/dist/leaflet.css';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -132,7 +132,7 @@ function StockBar({ units }: { units: number }) {
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function MapPage() {
-  const { user } = useAuthStore();
+
 
   const [centers,    setCenters]    = useState<Center[]>([]);
   const [donors,     setDonors]     = useState<Donor[]>([]);

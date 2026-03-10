@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, Phone, MapPin, Calendar, Star as StarIcon, ArrowLeft } from 'lucide-react';
+import { Loader2, Phone, Star as StarIcon, ArrowLeft } from 'lucide-react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import toast from 'react-hot-toast';
 import api from '../services/api';

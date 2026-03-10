@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Droplets, AlertTriangle, TrendingUp, Activity,
+  Droplets, AlertTriangle, TrendingUp, 
   Clock, Heart, CheckCircle, Award, PlusCircle,
-  ArrowRight, Users, UserCheck, CalendarDays,
-  Flame, BarChart2, MapPin,
+  ArrowRight, Users, UserCheck, 
+   BarChart2, MapPin,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  LineChart, Line, AreaChart, Area,
+  AreaChart, Area,
 } from 'recharts';
 import { useAuthStore }           from '../store/useAuthStore';
 import { bloodRequestService }    from '../services/bloodRequestService';

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft, User, Mail, Phone, MapPin, Shield,
     Calendar, Award, CheckCircle, Clock, Loader2,
-    ToggleLeft, ToggleRight, Droplets, Heart, Building2,
+    ToggleLeft, ToggleRight, Droplets, Heart,
     Star,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -115,40 +115,40 @@ export default function AdminUserProfilePage() {
             .finally(() => setLoading(false));
     }, [id]);
 
-// ── Load donations / requests (replace existing useEffect)
-useEffect(() => {
-  if (!profile) return;
-  setLoadingDons(true);
+    // ── Load donations / requests (replace existing useEffect)
+    useEffect(() => {
+        if (!profile) return;
+        setLoadingDons(true);
 
-  const load = async () => {
-    try {
-      if (profile.role === 'DONOR') {
-        // نطلب عبر params بدلاً من concatenation
-        const res = await api.get('/donations', { params: { donorId: profile.id, limit: 5 } });
-        // دفاعي: احتفظ فقط بـ donations التي لها donorId مطابق
-        const data = (res.data?.data || res.data || []).filter((d: any) => d.donorId === profile.id);
-        setDonations(data);
-        setRequests([]); // تفريغ requests لأن الآن نعرض donations
-      } else if (profile.role === 'PATIENT') {
-        const res = await api.get('/blood-requests', { params: { patientId: profile.id, limit: 5 } });
-        const data = (res.data?.data || res.data || []).filter((r: any) => r.patientId === profile.id);
-        setRequests(data);
-        setDonations([]); // تفريغ donations لأن الآن نعرض requests
-      } else {
-        setDonations([]);
-        setRequests([]);
-      }
-    } catch (err) {
-      // لا تُظهر خطأ مزعج — افرغ القوائم
-      setDonations([]);
-      setRequests([]);
-    } finally {
-      setLoadingDons(false);
-    }
-  };
+        const load = async () => {
+            try {
+                if (profile.role === 'DONOR') {
+                    // نطلب عبر params بدلاً من concatenation
+                    const res = await api.get('/donations', { params: { donorId: profile.id, limit: 5 } });
+                    // دفاعي: احتفظ فقط بـ donations التي لها donorId مطابق
+                    const data = (res.data?.data || res.data || []).filter((d: any) => d.donorId === profile.id);
+                    setDonations(data);
+                    setRequests([]); // تفريغ requests لأن الآن نعرض donations
+                } else if (profile.role === 'PATIENT') {
+                    const res = await api.get('/blood-requests', { params: { patientId: profile.id, limit: 5 } });
+                    const data = (res.data?.data || res.data || []).filter((r: any) => r.patientId === profile.id);
+                    setRequests(data);
+                    setDonations([]); // تفريغ donations لأن الآن نعرض requests
+                } else {
+                    setDonations([]);
+                    setRequests([]);
+                }
+            } catch (err) {
+                // لا تُظهر خطأ مزعج — افرغ القوائم
+                setDonations([]);
+                setRequests([]);
+            } finally {
+                setLoadingDons(false);
+            }
+        };
 
-  load();
-}, [profile]);
+        load();
+    }, [profile]);
     // ── Fetch when profile is loaded
     useEffect(() => {
         if (!profile) return;
@@ -431,6 +431,44 @@ useEffect(() => {
                             )}
                         </Section>
                     )}
+                    {/* ── Avis récents ── */}
+                    {profile.role === 'DONOR' && (
+                        <Section title="Avis récents" icon={Star}>
+                            {reviewsLoading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="w-6 h-6 animate-spin text-blood-600" />
+                                </div>
+                            ) : recentReviews && recentReviews.length === 0 ? (
+                                <div className="text-center py-4">
+                                    <p className="text-sm text-gray-400">Aucun avis récent</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {recentReviews.map((rev: any, idx: number) => (
+                                        <div key={rev.id || idx} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">
+                                                    {(rev.authorName || 'U').slice(0, 1).toUpperCase()}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                                            {rev.authorName || 'Utilisateur'}
+                                                        </div>
+                                                        <div className="text-xs text-gray-400">
+                                                            {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString('fr-FR') : ''}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{rev.comment || '—'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </Section>
+                    )}
+
                 </div>
 
                 {/* ── Colonne droite ── */}

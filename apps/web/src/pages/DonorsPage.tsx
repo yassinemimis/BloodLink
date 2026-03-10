@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, Search, MapPin, Droplets, CheckCircle, XCircle } from 'lucide-react';
 import api from '../services/api';
 import type { User } from '../types';
-import {  BloodGroup, BLOOD_GROUP_LABELS } from '../types';
+import {   BLOOD_GROUP_LABELS } from '../types';
 
 export default function DonorsPage() {
   const [donors, setDonors] = useState<User[]>([]);

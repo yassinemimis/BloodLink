@@ -41,17 +41,17 @@ export default function NotificationsPage() {
     }
   };
 
-  const markAsRead = async (id: string) => {
-    try {
-      await api.patch(`/notifications/${id}/read`);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-      );
-      setUnreadCount((c) => Math.max(0, c - 1));
-    } catch {
-      toast.error('Erreur');
-    }
-  };
+  // const markAsRead = async (id: string) => {
+  //   try {
+  //     await api.patch(`/notifications/${id}/read`);
+  //     setNotifications((prev) =>
+  //       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+  //     );
+  //     setUnreadCount((c) => Math.max(0, c - 1));
+  //   } catch {
+  //     toast.error('Erreur');
+  //   }
+  // };
 
   const markAllAsRead = async () => {
     try {

@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, Filter, Search, Droplets } from 'lucide-react';
+import { PlusCircle, Search, Droplets } from 'lucide-react';
 import { bloodRequestService } from '../services/bloodRequestService';
 import type { BloodRequest } from '../types';
 import {
-  BloodGroup,
-  UrgencyLevel,
-  RequestStatus,
+
   BLOOD_GROUP_LABELS,
   URGENCY_LABELS,
   URGENCY_COLORS,

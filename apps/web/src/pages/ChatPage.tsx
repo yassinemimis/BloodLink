@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useNavigate }  from 'react-router-dom';
-import { Send, ArrowLeft, Phone, Clock, CheckCheck, Check, Loader2 } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate }  from 'react-router-dom';
+import { Send, ArrowLeft, CheckCheck, Check, Loader2 } from 'lucide-react';
 import toast                       from 'react-hot-toast';
 import { useAuthStore }            from '../store/useAuthStore';
 import { useSocket }               from '../hooks/useSocket';
@@ -341,7 +341,7 @@ function ChatWindow({ conversation }: { conversation: Conversation }) {
 // ─── Main Page ────────────────────────────────────────────────
 export default function ChatPage() {
   const navigate = useNavigate();
-  const { donationId } = useParams<{ donationId?: string }>();
+
   const [selected, setSelected] = useState<Conversation | null>(null);
 
   return (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  User, Mail, Phone, MapPin, Droplets, Shield, Calendar,
+  User, MapPin, Shield, Calendar,
   Award, Edit3, Save, X, Camera, Loader2, ToggleLeft,
   ToggleRight, Lock, Eye, EyeOff, CheckCircle, Clock,
   Crosshair, Heart, Star,
@@ -11,7 +11,7 @@ import 'leaflet/dist/leaflet.css';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { useAuthStore }  from '../store/useAuthStore';
-import { BLOOD_GROUP_LABELS, Role } from '../types';
+import { BLOOD_GROUP_LABELS } from '../types';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({

@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Droplets, Users,
-  Building2, Map, Bell, User, X, Heart, PlusCircle,
+  Building2, Map, Bell, User, X,  PlusCircle,
   ShieldCheck, Megaphone, Moon, Sun,
   MessageSquare,
   MailOpen,
-  Star,
+  
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useDarkMode } from '../../store/useDarkMode';

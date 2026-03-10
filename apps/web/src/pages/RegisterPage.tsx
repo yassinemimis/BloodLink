@@ -143,7 +143,7 @@ export default function RegisterPage() {
     }
   };
 
-  const STEPS = ['Rôle', 'Profil', 'Sécurité'];
+
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-950">
