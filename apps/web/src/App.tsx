@@ -10,6 +10,7 @@ import DashboardLayout from './components/layout/DashboardLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';     // ✅ خارج Layout
 import DashboardPage from './pages/DashboardPage';
 import BloodRequestsPage from './pages/BloodRequestsPage';
 import NewRequestPage from './pages/NewRequestPage';
@@ -22,6 +23,11 @@ import ProfilePage from './pages/ProfilePage';
 import VerificationPage from './pages/VerificationPage';
 import CampaignsPage from './pages/CampaignsPage';
 import ChatPage from './pages/ChatPage';
+import AdminUserProfilePage from './pages/AdminUserProfilePage';
+import AdminMailPage from './pages/AdminMailPage';
+import DonorProfileConsultPage from './pages/DonorProfileConsultPage';
+
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 5 * 60 * 1000, retry: 1 },
@@ -35,7 +41,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ✅ Route protégée par rôle — redirige si rôle non autorisé
+// ✅ Route protégée par rôle
 function RoleRoute({
   children,
   allowedRoles,
@@ -44,9 +50,7 @@ function RoleRoute({
   allowedRoles: Role[];
 }) {
   const { user } = useAuthStore();
-  if (!user || !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
-  }
+  if (!user || !allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -55,11 +59,22 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          {/* Routes publiques */}
+
+          {/* ── Routes publiques ── */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Routes protégées */}
+          {/* ✅ Vérification email — protégée mais SANS sidebar */}
+          <Route
+            path="/verify-email"
+            element={
+              <ProtectedRoute>
+                <VerifyEmailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ── Routes protégées AVEC layout ── */}
           <Route
             path="/"
             element={
@@ -69,12 +84,11 @@ function App() {
             }
           >
             <Route index element={<DashboardPage />} />
+
             <Route path="requests" element={<BloodRequestsPage />} />
             <Route path="requests/:id" element={<RequestDetailPage />} />
-
-            {/* ✅ DONOR ممنوع من Nouvelle demande */}
             <Route
-              path="requests/new"
+              path="requests1/new"
               element={
                 <RoleRoute allowedRoles={[Role.ADMIN, Role.DOCTOR, Role.PATIENT]}>
                   <NewRequestPage />
@@ -86,6 +100,7 @@ function App() {
             <Route path="centers" element={<CentersPage />} />
             <Route path="campaigns" element={<CampaignsPage />} />
             <Route path="map" element={<MapPage />} />
+
             <Route
               path="verification"
               element={
@@ -97,14 +112,24 @@ function App() {
 
             <Route path="chat" element={<ChatPage />} />
             <Route path="chat/:donationId" element={<ChatPage />} />
-            
+
+            <Route path="admin/users/:id" element={<AdminUserProfilePage />} />
+            <Route path="donors/:id" element={<DonorProfileConsultPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="profile" element={<ProfilePage />} />
-
-           
+            <Route
+              path="admin/mail"
+              element={
+                <RoleRoute allowedRoles={[Role.ADMIN]}>
+                  <AdminMailPage />
+                </RoleRoute>
+              }
+            />
           </Route>
 
+          {/* ── Fallback ── */}
           <Route path="*" element={<Navigate to="/" replace />} />
+
         </Routes>
       </BrowserRouter>
 

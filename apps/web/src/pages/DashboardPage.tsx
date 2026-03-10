@@ -110,7 +110,7 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Bonjour, {user?.firstName} 👋</h1>
             <p className="text-gray-500 mt-1 text-sm">Suivi de vos demandes de sang</p>
           </div>
-          <button onClick={() => navigate('/requests/new')} className="btn-primary flex items-center gap-2">
+          <button onClick={() => navigate('/requests1/new')} className="btn-primary flex items-center gap-2">
             <PlusCircle className="w-5 h-5" /> Nouvelle demande
           </button>
         </div>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
             <div className="text-center py-10">
               <Droplets className="w-12 h-12 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
               <p className="text-gray-500">Aucune demande pour le moment</p>
-              <button onClick={() => navigate('/requests/new')} className="btn-primary mt-4 text-sm">Créer ma première demande</button>
+              <button onClick={() => navigate('/requests1/new')} className="btn-primary mt-4 text-sm">Créer ma première demande</button>
             </div>
           )}
         </div>

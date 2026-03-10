@@ -135,7 +135,7 @@ export default function RegisterPage() {
       });
       setAuth(response.user, response.accessToken);
       toast.success('Inscription réussie ! Bienvenue sur BloodLink 🎉');
-      navigate('/');
+      navigate('/verify-email');
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Erreur lors de l'inscription");
     } finally {

@@ -4,6 +4,8 @@ import {
   Building2, Map, Bell, User, X, Heart, PlusCircle,
   ShieldCheck, Megaphone, Moon, Sun,
   MessageSquare,
+  MailOpen,
+  Star,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useDarkMode } from '../../store/useDarkMode';
@@ -17,13 +19,14 @@ interface SidebarProps {
 const navItems = [
   { path: '/', label: 'Tableau de bord', icon: LayoutDashboard, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
   { path: '/requests', label: 'Demandes de sang', icon: Droplets, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
-  { path: '/requests/new', label: 'Nouvelle demande', icon: PlusCircle, roles: [Role.DOCTOR, Role.PATIENT] },
+  { path: '/requests1/new', label: 'Nouvelle demande', icon: PlusCircle, roles: [Role.DOCTOR, Role.PATIENT] },
   { path: '/chat', label: 'Messages', icon: MessageSquare, roles: [Role.DONOR, Role.PATIENT] },
   { path: '/donors', label: 'Donneurs', icon: Users, roles: [Role.ADMIN, Role.DOCTOR] },
   { path: '/centers', label: 'Centres de collecte', icon: Building2, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
   { path: '/verification', label: 'Vérification', icon: ShieldCheck, roles: [Role.ADMIN] },
   { path: '/campaigns', label: 'Campagnes', icon: Megaphone, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
   { path: '/map', label: 'Carte', icon: Map, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
+  { path: '/admin/mail', label: 'Campagne Email', icon: MailOpen, roles: [Role.ADMIN] },
   { path: '/notifications', label: 'Notifications', icon: Bell, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
   { path: '/profile', label: 'Mon profil', icon: User, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
 ];

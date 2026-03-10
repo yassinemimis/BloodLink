@@ -51,32 +51,36 @@ enum DonationStatus {
 }
 
 model User {
-  id              String       @id @default(uuid())
-  email           String       @unique
-  password        String
-  firstName       String       @map("first_name")
-  lastName        String       @map("last_name")
-  phone           String?
-  bloodGroup      BloodGroup   @map("blood_group")
-  role            Role         @default(DONOR)
-  avatar          String?
-  isAvailable     Boolean      @default(true) @map("is_available")
-  isVerified      Boolean      @default(false) @map("is_verified")
-  isActive        Boolean      @default(true) @map("is_active")
-  latitude        Float?
-  longitude       Float?
-  address         String?
-  city            String?
-  lastDonationAt  DateTime?    @map("last_donation_at")
-  totalDonations  Int          @default(0) @map("total_donations")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  id                       String         @id @default(uuid())
+  email                    String         @unique
+  password                 String
+  firstName                String         @map("first_name")
+  lastName                 String         @map("last_name")
+  phone                    String?
+  bloodGroup               BloodGroup     @map("blood_group")
+  role                     Role           @default(DONOR)
+  avatar                   String?
+  isAvailable              Boolean        @default(true) @map("is_available")
+  isVerified               Boolean        @default(false) @map("is_verified")
+  isActive                 Boolean        @default(true) @map("is_active")
+  latitude                 Float?
+  longitude                Float?
+  address                  String?
+  city                     String?
+  lastDonationAt           DateTime?      @map("last_donation_at")
+  totalDonations           Int            @default(0) @map("total_donations")
+  createdAt                DateTime       @default(now()) @map("created_at")
+  updatedAt                DateTime       @updatedAt @map("updated_at")
+  emailVerificationCode    String?        @map("email_verification_code")
+  emailVerificationExpires DateTime?      @map("email_verification_expires")
+  requestsAsPatient        BloodRequest[] @relation("PatientRequests")
+  requestsAsDoctor         BloodRequest[] @relation("DoctorRequests")
+  donations                Donation[]
+  notifications            Notification[]
+  sentMessages             Message[]      @relation("SentMessages")
+  patientRatings           Rating[]       @relation("patientRatings")
+  donorRatings             Rating[]       @relation("donorRatings")
 
-  requestsAsPatient BloodRequest[] @relation("PatientRequests")
-  requestsAsDoctor  BloodRequest[] @relation("DoctorRequests")
-  donations         Donation[]
-  notifications     Notification[]
-  sentMessages      Message[]      @relation("SentMessages")
   @@map("users")
 }
 
@@ -116,15 +120,16 @@ model Donation {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
-  request BloodRequest @relation(fields: [requestId], references: [id])
-  donor   User         @relation(fields: [donorId], references: [id])
+  request  BloodRequest @relation(fields: [requestId], references: [id])
+  donor    User         @relation(fields: [donorId], references: [id])
   messages Message[]
+  rating   Rating?
 
   @@map("donations")
 }
 
 model Center {
-  id           String      @id @default(uuid())
+  id           String   @id @default(uuid())
   name         String
   address      String
   city         String
@@ -132,10 +137,10 @@ model Center {
   email        String?
   latitude     Float
   longitude    Float
-  openingHours String?     @map("opening_hours")
-  isActive     Boolean     @default(true) @map("is_active")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
+  openingHours String?  @map("opening_hours")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   bloodStocks BloodStock[]
   campaigns   Campaign[]
@@ -201,4 +206,20 @@ model Message {
   sender   User     @relation("SentMessages", fields: [senderId], references: [id])
 
   @@map("messages")
+}
+
+model Rating {
+  id         String   @id @default(cuid())
+  donation   Donation @relation(fields: [donationId], references: [id])
+  donationId String   @unique
+
+  patient   User   @relation("patientRatings", fields: [patientId], references: [id])
+  patientId String
+
+  donor   User   @relation("donorRatings", fields: [donorId], references: [id])
+  donorId String
+
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
 }

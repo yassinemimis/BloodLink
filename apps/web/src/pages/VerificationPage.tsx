@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Search, CheckCircle, XCircle, Shield, Users, Loader2 } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Shield, Users, Loader2, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { BLOOD_GROUP_LABELS } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 interface UserItem {
   id: string;
@@ -20,30 +21,30 @@ interface UserItem {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  ADMIN:   '⚙️ Admin',
-  DOCTOR:  '👨‍⚕️ Médecin',
-  DONOR:   '💉 Donneur',
+  ADMIN: '⚙️ Admin',
+  DOCTOR: '👨‍⚕️ Médecin',
+  DONOR: '💉 Donneur',
   PATIENT: '🏥 Patient',
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN:   'bg-purple-100 text-purple-700',
-  DOCTOR:  'bg-blue-100 text-blue-700',
-  DONOR:   'bg-blood-100 text-blood-700',
+  ADMIN: 'bg-purple-100 text-purple-700',
+  DOCTOR: 'bg-blue-100 text-blue-700',
+  DONOR: 'bg-blood-100 text-blood-700',
   PATIENT: 'bg-green-100 text-green-700',
 };
 
 export default function VerificationPage() {
-  const [users, setUsers]           = useState<UserItem[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [search, setSearch]         = useState('');
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterVerified, setFilterVerified] = useState('');
-  const [page, setPage]             = useState(1);
+  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal]           = useState(0);
-  const [toggling, setToggling]     = useState<string | null>(null);
-
+  const [total, setTotal] = useState(0);
+  const [toggling, setToggling] = useState<string | null>(null);
+const navigate = useNavigate();
   useEffect(() => { loadUsers(); }, [page, filterRole, filterVerified]);
 
   // debounce search
@@ -56,9 +57,9 @@ export default function VerificationPage() {
     setLoading(true);
     try {
       const params: any = { page, limit: 15 };
-      if (filterRole)    params.role       = filterRole;
+      if (filterRole) params.role = filterRole;
       if (filterVerified !== '') params.isVerified = filterVerified === 'true';
-      if (search)        params.search     = search;
+      if (search) params.search = search;
 
       const res = await api.get('/users', { params });
       setUsers(res.data.data);
@@ -86,7 +87,7 @@ export default function VerificationPage() {
     }
   };
 
-  const verified   = users.filter((u) => u.isVerified).length;
+  const verified = users.filter((u) => u.isVerified).length;
   const unverified = users.filter((u) => !u.isVerified).length;
 
   return (
@@ -186,6 +187,7 @@ export default function VerificationPage() {
                     <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-5">Statut</th>
                     <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-5">Inscrit le</th>
                     <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-5">Action</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-5"> Voir profil</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -235,11 +237,10 @@ export default function VerificationPage() {
                         <button
                           onClick={() => handleToggleVerify(u.id, u.isVerified)}
                           disabled={toggling === u.id}
-                          className={`text-xs px-3 py-1.5 rounded-lg font-medium flex items-center gap-1 transition-all ${
-                            u.isVerified
+                          className={`text-xs px-3 py-1.5 rounded-lg font-medium flex items-center gap-1 transition-all ${u.isVerified
                               ? 'bg-red-50 text-red-600 hover:bg-red-100'
                               : 'bg-green-50 text-green-700 hover:bg-green-100'
-                          }`}
+                            }`}
                         >
                           {toggling === u.id
                             ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -247,6 +248,16 @@ export default function VerificationPage() {
                               ? <><XCircle className="w-3 h-3" /> Retirer</>
                               : <><CheckCircle className="w-3 h-3" /> Vérifier</>
                           }
+                        </button>
+                      </td>
+                      <td className="py-3 px-5">
+                        <button
+                          onClick={() => navigate(`/admin/users/${u.id}`)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+             bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300
+             hover:bg-blood-50 hover:text-blood-600 transition-colors text-xs font-medium">
+                          <Eye className="w-3.5 h-3.5" />
+                          Voir profil
                         </button>
                       </td>
                     </tr>

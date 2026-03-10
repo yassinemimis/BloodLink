@@ -4,7 +4,7 @@ import { BloodGroup, Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // ==================== LISTER LES DONNEURS ====================
   async findAllDonors(filters?: {
@@ -38,7 +38,7 @@ export class UsersService {
           totalDonations: true,
           lastDonationAt: true,
           createdAt: true,
-          latitude:  true,   // ✅ أضف هذا
+          latitude: true,   // ✅ أضف هذا
           longitude: true,   // ✅ 
         },
         orderBy: { createdAt: 'desc' },
@@ -72,6 +72,8 @@ export class UsersService {
         totalDonations: true,
         lastDonationAt: true,
         createdAt: true,
+        latitude: true,
+        longitude: true,
       },
     });
 
@@ -151,7 +153,7 @@ export class UsersService {
       donorsByBloodGroup,
     };
   }
-    // ==================== LISTER TOUS LES UTILISATEURS (Admin) ====================
+  // ==================== LISTER TOUS LES UTILISATEURS (Admin) ====================
   async findAllUsers(filters?: {
     role?: string;
     isVerified?: boolean;
@@ -159,18 +161,18 @@ export class UsersService {
     page?: number;
     limit?: number;
   }) {
-    const page  = filters?.page  || 1;
+    const page = filters?.page || 1;
     const limit = filters?.limit || 20;
-    const skip  = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (filters?.role)                       where.role       = filters.role;
-    if (filters?.isVerified !== undefined)   where.isVerified = filters.isVerified;
+    if (filters?.role) where.role = filters.role;
+    if (filters?.isVerified !== undefined) where.isVerified = filters.isVerified;
     if (filters?.search) {
       where.OR = [
         { firstName: { contains: filters.search, mode: 'insensitive' } },
-        { lastName:  { contains: filters.search, mode: 'insensitive' } },
-        { email:     { contains: filters.search, mode: 'insensitive' } },
+        { lastName: { contains: filters.search, mode: 'insensitive' } },
+        { email: { contains: filters.search, mode: 'insensitive' } },
       ];
     }
 
@@ -210,28 +212,28 @@ export class UsersService {
 
   // أضف هذه الدالة بعد updateLocation
 
-// ==================== METTRE À JOUR LE PROFIL ====================
-async updateProfile(userId: string, data: {
-  phone?:   string;
-  address?: string;
-  city?:    string;
-  avatar?:  string;
-}) {
-  return this.prisma.user.update({
-    where: { id: userId },
-    data: {
-      ...(data.phone   !== undefined && { phone:   data.phone }),
-      ...(data.address !== undefined && { address: data.address }),
-      ...(data.city    !== undefined && { city:    data.city }),
-      ...(data.avatar  !== undefined && { avatar:  data.avatar }),
-    },
-    select: {
-      id: true, email: true, firstName: true, lastName: true,
-      phone: true, bloodGroup: true, role: true, avatar: true,
-      isAvailable: true, isVerified: true, latitude: true,
-      longitude: true, address: true, city: true,
-      lastDonationAt: true, totalDonations: true, createdAt: true,
-    },
-  });
-}
+  // ==================== METTRE À JOUR LE PROFIL ====================
+  async updateProfile(userId: string, data: {
+    phone?: string;
+    address?: string;
+    city?: string;
+    avatar?: string;
+  }) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.phone !== undefined && { phone: data.phone }),
+        ...(data.address !== undefined && { address: data.address }),
+        ...(data.city !== undefined && { city: data.city }),
+        ...(data.avatar !== undefined && { avatar: data.avatar }),
+      },
+      select: {
+        id: true, email: true, firstName: true, lastName: true,
+        phone: true, bloodGroup: true, role: true, avatar: true,
+        isAvailable: true, isVerified: true, latitude: true,
+        longitude: true, address: true, city: true,
+        lastDonationAt: true, totalDonations: true, createdAt: true,
+      },
+    });
+  }
 }

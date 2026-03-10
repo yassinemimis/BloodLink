@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import AuthNavigator from './AuthNavigator';
 import MainTabNavigator from './MainTabNavigator';
 import RequestDetailScreen from '../screens/requests/RequestDetailScreen';
-import NewRequestScreen from '../screens/requests/NewRequestScreen';
+import NewRequestScreen from '../screens/requests1/newRequestScreen';
 import DonorDetailScreen from '../screens/search/DonorDetailScreen';
 
 export type RootStackParamList = {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Clock, User, Phone,
   Building2, CheckCircle, XCircle, AlertTriangle,
@@ -13,6 +13,7 @@ import {
   BLOOD_GROUP_LABELS, URGENCY_LABELS, URGENCY_COLORS, STATUS_LABELS, Role,
 } from '../types';
 import { useAuthStore } from '../store/useAuthStore';
+import RateDonorModal from '../components/RateDonorModal';
 
 // ألوان وتسميات حالة التبرع
 const donationStatusColors: Record<string, string> = {
@@ -43,6 +44,12 @@ export default function RequestDetailPage() {
   // أضف هذا الـ state في أعلى الـ component
   const [completing, setCompleting] = useState<string | null>(null);
 
+  // Rating states
+  const [showRate, setShowRate] = useState(false);
+  const [selectedDonationId, setSelectedDonationId] = useState<string | null>(null);
+  const [ratingsMap, setRatingsMap] = useState<Record<string, any>>({}); // donationId -> rating|null
+  const [ratingsLoading, setRatingsLoading] = useState<boolean>(false);
+
   // أضف هذه الدالة
   const handleCompleteDonation = async (donationId: string) => {
     if (!confirm('Confirmer que ce donneur a bien effectué le don ?')) return;
@@ -50,13 +57,14 @@ export default function RequestDetailPage() {
     try {
       await api.patch(`/donations/${donationId}/complete`);
       toast.success('🎉 Don confirmé ! Merci pour votre vie sauvée.');
-      loadRequest();
+      await loadRequest();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Erreur');
     } finally {
       setCompleting(null);
     }
   };
+
   useEffect(() => { if (id) loadRequest(); }, [id]);
 
   const loadRequest = async () => {
@@ -77,7 +85,7 @@ export default function RequestDetailPage() {
     try {
       await api.post('/donations/accept', { requestId: id });
       toast.success('🩸 Merci ! Votre acceptation a été enregistrée.');
-      loadRequest();
+      await loadRequest();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Erreur');
     } finally {
@@ -90,11 +98,34 @@ export default function RequestDetailPage() {
     try {
       await bloodRequestService.cancel(id!);
       toast.success('Demande annulée');
-      loadRequest();
+      await loadRequest();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Erreur');
     }
   };
+
+  // ── Ratings helpers ───────────────────────────────────────
+  const fetchRating = async (donationId: string) => {
+    try {
+      const res = await api.get('/ratings', { params: { donationId } });
+      setRatingsMap((m) => ({ ...m, [donationId]: res.data.data || null }));
+    } catch {
+      setRatingsMap((m) => ({ ...m, [donationId]: null }));
+    }
+  };
+
+  // بعد كل تحميل للـ request، تحقق من تقييمات الـ donations المكتملة (إن كان المريض هو الحالي)
+  useEffect(() => {
+    if (!request || !user) return;
+    if (request.patientId !== user.id) return;
+
+    const completedDonations = request.donations?.filter((d) => d.status === 'COMPLETED') || [];
+    if (completedDonations.length === 0) return;
+
+    setRatingsLoading(true);
+    Promise.all(completedDonations.map((d) => fetchRating(d.id)))
+      .finally(() => setRatingsLoading(false));
+  }, [request, user?.id]);
 
   if (loading) {
     return (
@@ -267,40 +298,56 @@ export default function RequestDetailPage() {
                 {request.donations.map((donation) => (
                   <div key={donation.id}
                     className={`p-4 rounded-xl border-2 transition-all
-                      ${donation.status === 'ACCEPTED' ? 'border-green-200 bg-green-50' : ''}
-                      ${donation.status === 'COMPLETED' ? 'border-emerald-200 bg-emerald-50' : ''}
-                      ${donation.status === 'REJECTED' ? 'border-red-100 bg-red-50/50' : ''}
-                      ${donation.status === 'NOTIFIED' ? 'border-gray-100 bg-gray-50' : ''}
-                      ${donation.status === 'IN_PROGRESS' ? 'border-yellow-200 bg-yellow-50' : ''}
-                    `}
+  ${donation.status === 'ACCEPTED'
+                        ? 'border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800'
+                        : donation.status === 'COMPLETED'
+                          ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800'
+                          : donation.status === 'REJECTED'
+                            ? 'border-red-100 bg-red-50 dark:bg-red-950 dark:border-red-800'
+                            : donation.status === 'NOTIFIED'
+                              ? 'border-gray-100 bg-gray-50 dark:bg-gray-900 dark:border-gray-700'
+                              : donation.status === 'IN_PROGRESS'
+                                ? 'border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800'
+                                : 'border-gray-100 bg-white dark:bg-gray-800 dark:border-gray-700'
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-4">
 
                       {/* Infos Donor */}
                       <div className="flex items-center gap-3 flex-1">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0
-                          ${donation.status === 'ACCEPTED' ? 'bg-green-200 text-green-800' :
+    ${donation.status === 'ACCEPTED' ? 'bg-green-200 text-green-800' :
                             donation.status === 'COMPLETED' ? 'bg-emerald-200 text-emerald-800' :
                               donation.status === 'REJECTED' ? 'bg-red-100 text-red-600' :
                                 'bg-blood-100 text-blood-700'}`}
                         >
-                          {donation.donor?.firstName?.[0]}{donation.donor?.lastName?.[0]}
+                          {donation.donor?.firstName?.[0] ?? ''}{donation.donor?.lastName?.[0] ?? ''}
                         </div>
 
                         <div className="flex-1">
-                          {/* Nom + Groupe */}
+                          {/* الاسم كرابط — نتحقق أولاً من وجود id */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold text-gray-900">
-                              {donation.donor?.firstName} {donation.donor?.lastName}
-                            </p>
+                            {donation.donor?.id ? (
+                              <Link
+                                to={`/donors/${donation.donor.id}`}
+                                className="font-semibold text-gray-900 hover:underline"
+                              >
+                                {donation.donor?.firstName ?? ''} {donation.donor?.lastName ?? ''}
+                              </Link>
+                            ) : (
+                              <p className="font-semibold text-gray-900">
+                                {donation.donor?.firstName ?? ''} {donation.donor?.lastName ?? ''}
+                              </p>
+                            )}
+
                             {donation.donor?.bloodGroup && (
                               <span className="badge bg-blood-100 text-blood-700 text-xs">
-                                🩸 {BLOOD_GROUP_LABELS[donation.donor.bloodGroup]}
+                                🩸 {BLOOD_GROUP_LABELS[donation.donor.bloodGroup as keyof typeof BLOOD_GROUP_LABELS]}
                               </span>
                             )}
                           </div>
 
-                          {/* Détails */}
+                          {/* بقيّة التفاصيل (مدينة، عدد التبرعات، تاريخ) */}
                           <div className="flex items-center gap-3 mt-1 flex-wrap">
                             {donation.donor?.city && (
                               <span className="flex items-center gap-1 text-xs text-gray-500">
@@ -321,7 +368,7 @@ export default function RequestDetailPage() {
                             </span>
                           </div>
 
-                          {/* ✅ Téléphone — visible pour le patient et l'admin */}
+                          {/* Téléphone — يبقى كما هو (خارج الرابط) */}
                           {(user?.role === Role.PATIENT || user?.role === 'ADMIN' as any) &&
                             donation.status === 'ACCEPTED' &&
                             donation.donor?.phone && (
@@ -349,7 +396,7 @@ export default function RequestDetailPage() {
                         </p>
                       </div>
                     )}
-                
+
                     {donation.status === 'ACCEPTED' && request.patientId === user?.id && (
                       <div className="mt-3 pt-3 border-t border-green-200 flex items-center justify-between">
                         <p className="text-sm text-green-700 font-medium">
@@ -366,13 +413,36 @@ export default function RequestDetailPage() {
                         </button>
                       </div>
                     )}
+
                     {donation.status === 'COMPLETED' && (
                       <div className="mt-3 pt-3 border-t border-emerald-200">
-                        <p className="text-sm text-emerald-700 font-medium">
-                          🎉 Don effectué le {donation.completedAt
-                            ? new Date(donation.completedAt).toLocaleDateString('fr-FR')
-                            : '—'}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-emerald-700 font-medium">
+                            🎉 Don effectué le {donation.completedAt
+                              ? new Date(donation.completedAt).toLocaleDateString('fr-FR')
+                              : '—'}
+                          </p>
+
+                          {/* زر التقييم يظهر فقط للمريض المالك واذا لم يُقيّم بعد */}
+                          {request.patientId === user?.id && (
+                            <>
+                              {ratingsLoading ? (
+                                <button className="py-1 px-3 rounded-lg bg-gray-100 text-sm">
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                </button>
+                              ) : (
+                                !ratingsMap[donation.id] && (
+                                  <button
+                                    onClick={() => { setSelectedDonationId(donation.id); setShowRate(true); }}
+                                    className="py-1 px-3 rounded-lg bg-blood-600 text-white text-sm font-semibold"
+                                  >
+                                    Évaluer le donneur
+                                  </button>
+                                )
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -450,6 +520,19 @@ export default function RequestDetailPage() {
           )}
         </div>
       </div>
+
+      {/* RateDonor Modal */}
+      <RateDonorModal
+        open={showRate}
+        donationId={selectedDonationId ?? ''}
+        onClose={() => { setShowRate(false); setSelectedDonationId(null); }}
+        onSubmitted={async () => {
+          if (selectedDonationId) {
+            await fetchRating(selectedDonationId);
+            await loadRequest();
+          }
+        }}
+      />
     </div>
   );
 }

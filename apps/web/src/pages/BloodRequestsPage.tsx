@@ -69,7 +69,7 @@ export default function BloodRequestsPage() {
      {/* ✅ مخفي عن DONOR */}
         {user?.role !== Role.DONOR && (
           <button
-            onClick={() => navigate('/requests/new')}
+            onClick={() => navigate('/requests1/new')}
             className="btn-primary flex items-center gap-2"
           >
             <PlusCircle className="w-5 h-5" />

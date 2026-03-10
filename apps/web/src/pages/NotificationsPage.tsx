@@ -74,11 +74,11 @@ export default function NotificationsPage() {
     }
   };
 
-  // ✅ الإصلاح: تعليم كمقروء أولاً، ثم navigate مع scroll للأعلى
+  // ✅: الآن ننتقل إلى تفاصيل الطلب إذا كان requestId موجودًا (أيًا كان نوع الإشعار)
   const handleNotificationClick = async (notif: Notification) => {
-    const requestId = notif.data?.requestId;
+    const requestId = notif.data?.requestId as string | undefined;
 
-    // تعليم كمقروء أولاً
+    // تعليم كمقروء أولاً إن لم يكن كذلك
     if (!notif.isRead) {
       try {
         await api.patch(`/notifications/${notif.id}/read`);
@@ -87,19 +87,26 @@ export default function NotificationsPage() {
         );
         setUnreadCount((c) => Math.max(0, c - 1));
       } catch {
-        // ignore
+        // ignore marking failure
       }
     }
 
-    // ✅ الانتقال حسب النوع
-    if (requestId && ['REQUEST', 'URGENT'].includes(notif.type)) {
-      // ✅ scroll للأعلى قبل الانتقال
-      window.scrollTo({ top: 0, behavior: 'instant' });
+    // إذا كان هناك requestId نذهب مباشرة إلى صفحة التفاصيل
+    if (requestId) {
+      // scroll إلى الأعلى قبل التنقل
+      window.scrollTo({ top: 0, behavior: 'auto' });
       navigate(`/requests/${requestId}`);
-    } else if (notif.type === 'DONATION') {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      navigate('/requests');
+      return;
     }
+
+    // بخلاف ذلك، نتعامل مع الحالات العامة (مثلاً DONATION بدون requestId)
+    if (notif.type === 'DONATION') {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      navigate('/requests');
+      return;
+    }
+
+    // لا يوجد مسار مخصص: لا نفعل شيئًا إضافيًا
   };
 
   return (
@@ -130,7 +137,8 @@ export default function NotificationsPage() {
           {notifications.map((notif) => {
             const IconComponent = typeIcons[notif.type] || Bell;
             const colorClass    = typeColors[notif.type] || typeColors.SYSTEM;
-            const hasLink       = notif.data?.requestId && ['REQUEST', 'URGENT', 'DONATION'].includes(notif.type);
+            // hasLink: أي إشعار يحتوي على requestId يجب أن يكون قابلاً للنقر وينتقل لتفاصيل الطلب
+            const hasLink = !!notif.data?.requestId;
 
             return (
               <div
@@ -155,7 +163,7 @@ export default function NotificationsPage() {
                       </p>
                       <p className="text-sm text-gray-500 mt-0.5">{notif.body}</p>
 
-                      {/* ✅ رابط مرئي */}
+                      {/* رابط مرئي إذا يوجد requestId */}
                       {hasLink && (
                         <span className="inline-flex items-center gap-1 text-xs text-blood-600 font-medium mt-1.5 hover:underline">
                           Voir la demande <ArrowRight className="w-3 h-3" />
