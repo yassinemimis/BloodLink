@@ -11,7 +11,9 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:8081'],
+    origin: ['http://localhost:5173', 'http://localhost:8081', 'https://blood-link-5zjg.vercel.app',
+      'https://bloodlinkdz.me'
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
