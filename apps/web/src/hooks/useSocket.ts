@@ -10,7 +10,7 @@ export function useSocket() {
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
-    const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
+    const WS_URL = import.meta.env.VITE_WS_URL || 'https://bloodlinkdz.me';
 
     const socket = io(`${WS_URL}/ws`, {
       transports: ['websocket'],
