@@ -4,8 +4,7 @@ import {
   Building2, Map, Bell, User, X,  PlusCircle,
   ShieldCheck, Megaphone, Moon, Sun,
   MessageSquare,
-  MailOpen,
-  
+  MailOpen, Settings,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useDarkMode } from '../../store/useDarkMode';
@@ -29,6 +28,7 @@ const navItems = [
   { path: '/admin/mail', label: 'Campagne Email', icon: MailOpen, roles: [Role.ADMIN] },
   { path: '/notifications', label: 'Notifications', icon: Bell, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
   { path: '/profile', label: 'Mon profil', icon: User, roles: [Role.ADMIN, Role.DOCTOR, Role.DONOR, Role.PATIENT] },
+  { path: '/settings', label: 'Paramètres', icon: Settings, roles: [Role.ADMIN] },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {

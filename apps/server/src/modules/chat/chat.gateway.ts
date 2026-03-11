@@ -8,7 +8,7 @@ import { ChatService }    from './chat.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @WebSocketGateway({
-  cors: { origin: ['http://localhost:5173', 'http://localhost:8081'], credentials: true },
+  cors: { origin: ['http://localhost:5173', 'http://localhost:8081', 'https://bloodlinkdz.me'], credentials: true },
   namespace: '/ws',
 })
 export class ChatGateway {

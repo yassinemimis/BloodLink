@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Menu, Bell, LogOut, Search, Droplets, Users, Building2, Megaphone, X, Loader2 } from 'lucide-react';
+import { Menu, Bell, LogOut, Search, Droplets, Users, Building2, Megaphone, X, Loader2,Droplet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore }        from '../../store/useAuthStore';
 import { BLOOD_GROUP_LABELS }  from '../../types';
@@ -302,9 +302,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
       {/* Right */}
       <div className="flex items-center gap-4">
         {user?.bloodGroup && (
-          <span className="badge bg-blood-100 dark:bg-blood-950 text-blood-700 dark:text-blood-400 px-3 py-1 text-sm">
-            🩸 {BLOOD_GROUP_LABELS[user.bloodGroup]}
-          </span>
+          <span className="inline-flex items-center gap-2 badge bg-blood-100 dark:bg-blood-950 text-blood-700 dark:text-blood-400 px-3 py-1 text-sm">
+  <Droplet className="w-4 h-4" />
+  <span>{BLOOD_GROUP_LABELS[user.bloodGroup]}</span>
+</span>
         )}
 
         <button

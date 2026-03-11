@@ -26,6 +26,7 @@ import ChatPage from './pages/ChatPage';
 import AdminUserProfilePage from './pages/AdminUserProfilePage';
 import AdminMailPage from './pages/AdminMailPage';
 import DonorProfileConsultPage from './pages/DonorProfileConsultPage';
+import Settings from './pages/Settings';
 
 
 const queryClient = new QueryClient({
@@ -116,6 +117,7 @@ function App() {
             <Route path="admin/users/:id" element={<AdminUserProfilePage />} />
             <Route path="donors/:id" element={<DonorProfileConsultPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route
               path="admin/mail"
